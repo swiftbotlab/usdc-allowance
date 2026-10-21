@@ -39,14 +39,25 @@ Funded 0.20 = paid 0.16 to the data API + refunded 0.04 to the owner; the contra
 
 The same story ran first on Arc Testnet against Studio's deployment (allowance #1 on `0x002b...bd17`).
 
+**Through the live app (Demo page, allowance #3, in-browser agent key):** create + fund 0.04
+([0xc26a...](https://explorer.arc.io/tx/0xc26abaac7ce9b7ad7eaf7f26f876b2983da02bbe0356348f7a7f797f90981393)), gas to the agent
+([0xe9bf...](https://explorer.arc.io/tx/0xe9bf3a6dc4e3dee48aaf5e452fec69069b044996224e33b1a4da4052ab6fc4b6)), three paid queries
+([0xf92b...](https://explorer.arc.io/tx/0xf92b31ff9a17db919d0b13a36e3c8330566379362e44b34a8cab3ef7c436937b),
+[0x9e6d...](https://explorer.arc.io/tx/0x9e6db18df8e69fed3ac4321cc46a4a86ac3641c46bbf3d480cf43e374fc32524),
+[0xbe1c...](https://explorer.arc.io/tx/0xbe1cff475420139788e53a3af08480f583f88ed23db335b2f81e751cf75219ec)), the 4th sent anyway and FAILED on-chain with
+ExceedsPeriodCap ([0x6c03...](https://explorer.arc.io/tx/0x6c03242f6e804f9a9cde169a431326b5e96d819a7df590c024a8e009471f7b67)), paid after the period reset
+([0x24d2...](https://explorer.arc.io/tx/0x24d24a5761db6f7e52c33d57b3a621bf9884a405ac87237205c8d91b7227afdd)), revoke
+([0xabdb...](https://explorer.arc.io/tx/0xabdb7c3d9d0cd15a1fc35c6e7d736c970f17ae92ac47d9ebbb5784040c38e1f7)).
+
+Video walkthrough (2:46): https://github.com/swiftbotlab/usdc-allowance/releases/download/v1.0.0/usdc-allowance-arc-studio-mainnet.mp4
+
 ## How Arc Studio was used
 
 1. **Contract turn (smart-contract pipeline):** from our written spec Studio wrote `contracts/UsdcAllowance.sol`, six Foundry test files
    (unit, periods, limits, payees, fuzz, a stateful invariant handler), ran its solidity and functional auditors (no findings) and Slither
    (two Medium findings, both reviewed as false positives and documented inline), and deployed to Arc Testnet.
 2. **Fix turn (pipeline):** our independent spec suite found that `budget()` did not cap `remainingInPeriod` by the balance; Studio fixed
-   it, added tests and an invariant for it, re-ran everything and redeployed (`0x002b...bd17`). Studio's suite: 100 tests green, invariants
-   at 256 runs x 500 calls.
+   it, added tests and an invariant for it, re-ran everything and redeployed (`0x002b...bd17`). Studio reported 106/106 green, invariants at 256 runs x 500 calls.
 3. **App turn:** the React app (Owner, New, Allowance, Spender, Demo pages, decoded errors, CSP, frame guard) from one prompt, then
    `bun run check` and `bun run build`.
 4. **App fix turn:** after our end-to-end review: the guided agent Demo (in-browser agent key, 4 paid queries, the refused 4th with
@@ -65,7 +76,8 @@ entry "Event".
 
 ## Verification we ran around Studio
 
-- Studio's own suite, recompiled offline in a sandbox (Foundry 1.x, solc 0.8.28, via-IR): 100/100 pass.
+- Studio's own suite, recompiled offline in our sandbox (Foundry 1.x, solc 0.8.28, via-IR): all 100 test functions forge
+  counts pass (Studio's report counts 106 incl. invariant properties), invariants 256 runs x 128,000 calls.
 - Our independent suite (`spec-tests/`, written before Studio saw the task: 52 unit/fuzz tests + a model-based invariant suite that
   predicts the exact revert data of every call) against Studio's final source: 51/54 pass. The 3 remaining differences are accepted:
   two are Studio's convention for `periodAnchor = 0` (it stores the UTC midnight of creation and counts `periodIndex` from there; the
