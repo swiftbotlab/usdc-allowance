@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base font */
+:root {
+  font-family: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular nums for monetary values */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sonner toast overrides */
+[data-sonner-toast] {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+}

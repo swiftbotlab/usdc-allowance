@@ -1,0 +1,11 @@
+node_modules
+dist
+contracts/out
+contracts/cache
+.env
+.env.*
+console.jsonl
+traces.jsonl
+.foundry
+# circle credentials
+.circle/
