@@ -520,11 +520,12 @@ export function DemoPage() {
   }, [cfg.address, cfg.chain, cfg.deploymentBlock])
 
   // Auto-load replay when there is a demo id and no wallet or demo not yet started
-  const showReplay = (!isConnected || queryIdx === 0) && demoId !== null
+  const replayId: bigint | null = demoId ?? (cfg.demoAllowanceId > 0n ? cfg.demoAllowanceId : null)
+  const showReplay = (!isConnected || queryIdx === 0) && replayId !== null
   useEffect(() => {
     // eslint-disable-next-line react/set-state-in-effect
-    if (showReplay && demoId) void loadReplay(demoId)
-  }, [showReplay, demoId, loadReplay])
+    if (showReplay && replayId) void loadReplay(replayId)
+  }, [showReplay, replayId, loadReplay])
 
   // ── derived state ─────────────────────────────────────────────────────────
 
@@ -748,16 +749,16 @@ export function DemoPage() {
       </StepCard>
 
       {/* ── Read-only replay ──────────────────────────────────────────── */}
-      {showReplay && (
+      {showReplay && replayId !== null && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-800">
-              Event replay — allowance #{demoId.toString()}
-              {network === 'mainnet' && demoId === 1n
+              Event replay — allowance #{replayId.toString()}
+              {network === 'mainnet' && replayId === 1n
                 ? ' (scripted mainnet run: 3 paid, cap hit, raised, 4th paid next period, revoked)'
                 : ''}
             </h3>
-            <button onClick={() => { void loadReplay(demoId) }}
+            <button onClick={() => { void loadReplay(replayId) }}
               className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1">
               <RefreshCw className="w-3 h-3" /> Refresh
             </button>
