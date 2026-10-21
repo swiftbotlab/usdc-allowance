@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi'
-import { parseEther, keccak256, toBytes, createPublicClient, http as httpTransport } from 'viem'
+import { parseEther, keccak256, toBytes, createPublicClient, http as httpTransport, decodeEventLog } from 'viem'
 import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'
 import { useNetwork } from '../hooks/useNetwork'
@@ -695,7 +695,7 @@ function safeStr(v: unknown): string {
 function formatEventArgs(e: { type: string; args: Record<string, unknown> }): string {
   const a = e.args
   switch (e.type) {
-    case 'Paid': return `${fmtUsdc(a.amount as bigint)} USDC → ${shortAddr(safeStr(a.payee))}`
+    case 'Paid': return `${fmtUsdc(a.amount as bigint)} USDC → ${shortAddr(safeStr(a.payee))}${safeStr(a.memo) ? ' · ' + safeStr(a.memo) : ''}${typeof a.ref === 'string' && /^0x0+$/.test(a.ref) === false ? ' · ref ' + shortBytes32(a.ref as `0x${string}`) : ''}`
     case 'Funded': return `+${fmtUsdc(a.amount as bigint)} USDC`
     case 'Withdrawn': return `-${fmtUsdc(a.amount as bigint)} USDC`
     case 'Revoked': return `Returned ${fmtUsdc(a.refunded as bigint)} USDC`
@@ -703,6 +703,8 @@ function formatEventArgs(e: { type: string; args: Record<string, unknown> }): st
     case 'PayeeAdded': return `Added ${shortAddr(safeStr(a.payee))}`
     case 'PayeeRemoved': return `Removed ${shortAddr(safeStr(a.payee))}`
     case 'PausedSet': return a.paused ? 'Paused' : 'Unpaused'
+    case 'LimitsPending': return `PerCap ${fmtUsdc(a.perPaymentCap as bigint)}, PeriodCap ${fmtUsdc(a.periodCap as bigint)} from ${new Date(Number(a.activeAt as bigint) * 1000).toLocaleTimeString()}`
+    case 'AllowanceCreated': return `Spender ${shortAddr(safeStr(a.spender))}${safeStr(a.label) ? ' · ' + safeStr(a.label) : ''}`
     default: return ''
   }
 }
@@ -732,14 +734,15 @@ function useAllowanceHistoryLocal(id: bigint, cfg: ReturnType<typeof useNetwork>
           const logs = await client.getLogs({ address: cfg.address, fromBlock: from, toBlock: to })
           for (const log of logs) {
             if (log.topics[1] !== idTopic) continue
+            let decoded
+            try {
+              decoded = decodeEventLog({ abi: USDC_ALLOWANCE_ABI, data: log.data, topics: log.topics })
+            } catch { continue }
             allLogs.push({
-              type: 'Event',
+              type: decoded.eventName,
               blockNumber: log.blockNumber ?? 0n,
               transactionHash: log.transactionHash ?? '0x',
-              args: {
-                payee: log.topics[2] ? '0x' + log.topics[2].slice(26) : '',
-                ref: log.topics[3] ? shortBytes32(log.topics[3]) : '',
-              },
+              args: (decoded.args ?? {}) as Record<string, unknown>,
             })
           }
         } catch {

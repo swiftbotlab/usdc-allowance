@@ -54,10 +54,12 @@ The same story ran first on Arc Testnet against Studio's deployment (allowance #
 
 Everything under `src/`, `contracts/`, `scripts/` and the configs is synced unchanged from the Studio workspace. Our own additions: this
 README's mainnet/Studio/verification sections, `SECURITY.md`, `logo.png`, `spec-tests/` and `.github/workflows/pages.yml`.
-Two disclosed hand edits to Studio's code (a few lines each): `src/demo/types.ts` gives the demo agent 0.02 USDC for gas instead of 0.01 (at Arc's
+Three disclosed hand edits to Studio's code (a few lines each): `src/demo/types.ts` gives the demo agent 0.02 USDC for gas instead of 0.01 (at Arc's
 20 gwei base fee the wallet reserves 2x base per tx, so 0.01 ran out before the "Send anyway" and after-reset payments).
 `src/pages/DemoPage.tsx`: the read-only replay falls back to the configured `demoAllowanceId` (mainnet #1) when this browser has no
 demo of its own, as specified; Studio's version only replayed an id stored in localStorage, so first-time visitors saw no replay.
+`src/pages/AllowancePage.tsx`: the History list decodes each log with the ABI (`decodeEventLog`); Studio's version labelled every
+entry "Event".
 
 ## Verification we ran around Studio
 
