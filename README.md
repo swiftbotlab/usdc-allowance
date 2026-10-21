@@ -77,7 +77,7 @@ entry "Event".
 ## Verification we ran around Studio
 
 - Studio's own suite, recompiled offline in our sandbox (Foundry 1.x, solc 0.8.28, via-IR): all 100 test functions forge
-  counts pass (Studio's report counts 106 incl. invariant properties), invariants 256 runs x 128,000 calls.
+  counts pass (Studio's report counts 106 incl. invariant properties), invariants at 256 runs, 128,000 calls in total.
 - Our independent suite (`spec-tests/`, written before Studio saw the task: 52 unit/fuzz tests + a model-based invariant suite that
   predicts the exact revert data of every call) against Studio's final source: 51/54 pass. The 3 remaining differences are accepted:
   two are Studio's convention for `periodAnchor = 0` (it stores the UTC midnight of creation and counts `periodIndex` from there; the
