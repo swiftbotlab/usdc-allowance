@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   useAccount,
   useWriteContract,
+  useSendTransaction,
   useWaitForTransactionReceipt,
   useSwitchChain,
   useReadContract,
@@ -122,7 +123,7 @@ export function DemoPage() {
 
   // Step 3 tx (createAllowance + gas drop — two sequential writes)
   const { writeContract, data: fundHash, isPending: fundPending, reset: resetFund } = useWriteContract()
-  const { isLoading: fundConfirming, isSuccess: fundSuccess } = useWaitForTransactionReceipt({ hash: fundHash })
+  const { isLoading: fundConfirming } = useWaitForTransactionReceipt({ hash: fundHash })
 
   // Step 5 tx (revoke)
   const { writeContract: revokeWc, data: revokeHash, isPending: revokePending } = useWriteContract()
@@ -203,6 +204,9 @@ export function DemoPage() {
   const [step3Phase, setStep3Phase] = useState<'idle' | 'creating' | 'dropping'>('idle')
   const [createHash, setCreateHash] = useState<`0x${string}` | undefined>(undefined)
   const { isSuccess: createSuccess, data: createReceipt } = useWaitForTransactionReceipt({ hash: createHash })
+  // Gas drop = a plain native transfer (not a contract call)
+  const { sendTransaction, data: dropHash } = useSendTransaction()
+  const { isSuccess: dropSuccess } = useWaitForTransactionReceipt({ hash: dropHash })
 
   // After createAllowance confirmed → extract id → do gas drop
   // eslint-disable-next-line react/set-state-in-effect
@@ -235,32 +239,31 @@ export function DemoPage() {
       try {
         setStep3Phase('dropping')
         const maxFee = await getDynamicMaxFee(cfg.chain)
-        writeContract({
-          address: agentKey.address,  // send-to
-          abi: [],
-          functionName: undefined as never,
-          args: [],
+        sendTransaction({
+          to: agentKey.address,
           value: parseEther(amounts.gasDrop),
           maxFeePerGas: maxFee,
           maxPriorityFeePerGas: PRIORITY_FEE,
           chainId: cfg.chain.id,
+        }, {
+          onError: () => { toast.error('Gas drop failed.'); setStep3Phase('idle') },
         })
       } catch {
         toast.error('Gas drop failed.')
         setStep3Phase('idle')
       }
     })()
-  }, [createSuccess, createReceipt, step3Phase, network, agentKey, amounts.gasDrop, cfg.chain, writeContract]) // eslint-disable-line react/set-state-in-effect
+  }, [createSuccess, createReceipt, step3Phase, network, agentKey, amounts.gasDrop, cfg.chain, sendTransaction]) // eslint-disable-line react/set-state-in-effect
 
   // After gas drop confirmed
   useEffect(() => {
-    if (fundSuccess && step3Phase === 'dropping') {
+    if (dropSuccess && step3Phase === 'dropping') {
       toast.success(`Sent ${amounts.gasDrop} USDC to agent for gas.`)
       // eslint-disable-next-line react/set-state-in-effect
       setStep3Phase('idle')
       if (agentKey) fetchAgentBalance(agentKey)
     }
-  }, [fundSuccess, step3Phase, amounts.gasDrop, agentKey, fetchAgentBalance])
+  }, [dropSuccess, step3Phase, amounts.gasDrop, agentKey, fetchAgentBalance])
 
   const handleStep3 = async () => {
     if (!isConnected || !address) { toast.error('Connect your wallet first.'); return }
