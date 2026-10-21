@@ -34,6 +34,6 @@ export interface NetAmounts {
 }
 
 export const NET_AMOUNTS: Record<'mainnet' | 'testnet', NetAmounts> = {
-  testnet: { price: '0.05', perPaymentCap: '0.10', periodCap: '0.15', fund: '0.30', gasDrop: '0.01' },
-  mainnet: { price: '0.01', perPaymentCap: '0.02', periodCap: '0.03', fund: '0.04', gasDrop: '0.01' },
+  testnet: { price: '0.05', perPaymentCap: '0.10', periodCap: '0.15', fund: '0.30', gasDrop: '0.02' },
+  mainnet: { price: '0.01', perPaymentCap: '0.02', periodCap: '0.03', fund: '0.04', gasDrop: '0.02' },
 }
